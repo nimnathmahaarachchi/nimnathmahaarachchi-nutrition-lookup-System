@@ -9,7 +9,7 @@ import scalafx.event.ActionEvent
 import scalafx.Includes._
 
 class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
-  
+
   private val dialog = new Stage {
     title = "Add New Food"
     initModality(Modality.WindowModal)
@@ -17,7 +17,7 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
     width = 400
     height = 500
   }
-  
+
   private val nameField = new TextField { promptText = "Food name" }
   private val caloriesField = new TextField { promptText = "Calories per serving" }
   private val proteinField = new TextField { promptText = "Protein (g)" }
@@ -27,16 +27,15 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
     items = scalafx.collections.ObservableBuffer("Fruit", "Vegetable", "Grain")
     value = "Fruit"
   }
-  
-  // Category-specific fields
+
   private val vitaminCField = new TextField { promptText = "Vitamin C (mg)" }
   private val fiberField = new TextField { promptText = "Fiber (g)" }
   private val vitaminAField = new TextField { promptText = "Vitamin A (mcg)" }
   private val ironField = new TextField { promptText = "Iron (mg)" }
   private val wholeGrainCheck = new CheckBox("Whole Grain")
-  
+
   private var result: Option[Food] = None
-  
+
   def showAndWait(): Option[Food] = {
     dialog.scene = new Scene {
       root = new VBox {
@@ -46,13 +45,10 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
           new Label("Add New Food to Database") {
             style = "-fx-font-size: 18px; -fx-font-weight: bold;"
           },
-          
           new Separator(),
-          
           new Label("Basic Information:") {
             style = "-fx-font-weight: bold;"
           },
-          
           new GridPane {
             hgap = 10
             vgap = 10
@@ -69,15 +65,11 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
             add(new Label("Fat (g):"), 0, 5)
             add(fatField, 1, 5)
           },
-          
           new Separator(),
-          
           new Label("Category-Specific Information:") {
             style = "-fx-font-weight: bold;"
           },
-          
           categorySpecificFields,
-          
           new HBox {
             spacing = 10
             children = List(
@@ -94,24 +86,21 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
         )
       }
     }
-    
-    // Update category-specific fields when category changes
+
     categoryCombo.onAction = handle { updateCategoryFields() }
     updateCategoryFields()
-    
+
     dialog.showAndWait()
     result
   }
-  
+
   private def categorySpecificFields = new VBox {
     id = "categoryFields"
     spacing = 10
   }
-  
+
   private def updateCategoryFields(): Unit = {
-    // Clear and update the category-specific fields
     categorySpecificFields.children.clear()
-    
     categoryCombo.value.value match {
       case "Fruit" =>
         categorySpecificFields.children ++= List(
@@ -135,67 +124,65 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
         )
     }
   }
-  
+
   private def addFood(): Unit = {
     try {
-      // Validate required fields
       if (nameField.text.value.trim.isEmpty) {
         showError("Name is required")
         return
       }
-      
+
       val name = nameField.text.value.trim
       val calories = parseDouble(caloriesField.text.value, "Calories")
       val protein = parseDouble(proteinField.text.value, "Protein")
       val carbs = parseDouble(carbsField.text.value, "Carbohydrates")
       val fat = parseDouble(fatField.text.value, "Fat")
-      
-      // Validate ranges
+
       if (calories < 0 || calories > 10000) {
         showError("Calories must be between 0 and 10000")
         return
       }
-      
+
       if (protein < 0 || protein > 1000) {
         showError("Protein must be between 0 and 1000g")
         return
       }
-      
+
       if (carbs < 0 || carbs > 1000) {
         showError("Carbohydrates must be between 0 and 1000g")
         return
       }
-      
+
       if (fat < 0 || fat > 1000) {
         showError("Fat must be between 0 and 1000g")
         return
       }
-      
+
       val food = categoryCombo.value.value match {
         case "Fruit" =>
           val vitaminC = parseDouble(vitaminCField.text.value, "Vitamin C", 0)
           val fiber = parseDouble(fiberField.text.value, "Fiber", 0)
           Fruit(name, calories, protein, carbs, fat, vitaminC, fiber)
-          
+
         case "Vegetable" =>
           val vitaminA = parseDouble(vitaminAField.text.value, "Vitamin A", 0)
           val iron = parseDouble(ironField.text.value, "Iron", 0)
           Vegetable(name, calories, protein, carbs, fat, vitaminA, iron)
-          
+
         case "Grain" =>
           val fiber = parseDouble(fiberField.text.value, "Fiber", 0)
           val isWhole = wholeGrainCheck.selected.value
           Grain(name, calories, protein, carbs, fat, fiber, isWhole)
-          
+
         case _ => throw new IllegalArgumentException("Invalid category")
       }
-      
+
       database.addFood(food)
       result = Some(food)
-      
+
       showSuccess(s"Successfully added ${food.name} to the database!")
       dialog.close()
-      
+
     } catch {
       case e: NumberFormatException =>
         showError("Please enter valid numbers for all numeric fields")
@@ -205,7 +192,7 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
         showError(s"Error adding food: ${e.getMessage}")
     }
   }
-  
+
   private def parseDouble(text: String, fieldName: String, default: Double = Double.NaN): Double = {
     if (text.trim.isEmpty && !default.isNaN) default
     else if (text.trim.isEmpty) throw new IllegalArgumentException(s"$fieldName is required")
@@ -218,7 +205,7 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
       }
     }
   }
-  
+
   private def showError(message: String): Unit = {
     val alert = new Alert(Alert.AlertType.Error) {
       title = "Input Error"
@@ -227,7 +214,7 @@ class AddFoodDialog(parentStage: Stage, database: NutritionDatabase) {
     }
     alert.showAndWait()
   }
-  
+
   private def showSuccess(message: String): Unit = {
     val alert = new Alert(Alert.AlertType.Information) {
       title = "Success"

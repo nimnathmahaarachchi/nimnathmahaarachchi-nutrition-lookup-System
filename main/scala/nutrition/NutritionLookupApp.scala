@@ -10,10 +10,11 @@ import scalafx.collections.ObservableBuffer
 import scalafx.beans.property.StringProperty
 import scalafx.event.ActionEvent
 import scalafx.Includes._
-import scala.jdk.CollectionConverters._ // ✅ Fix for asJava
+import scala.jdk.CollectionConverters._
 
 object NutritionLookupApp extends JFXApp3 {
 
+  // Holds displayed values for each food table row
   class FoodDisplay(food: Food) {
     val name = StringProperty(food.name)
     val category = StringProperty(food.getCategory)
@@ -40,7 +41,7 @@ object NutritionLookupApp extends JFXApp3 {
 
         root = new BorderPane {
 
-          // Top Menu Bar
+          // Creates the application’s main top menu bar
           top = new MenuBar {
             menus = List(
               new Menu("File") {
@@ -93,7 +94,7 @@ object NutritionLookupApp extends JFXApp3 {
             )
           }
 
-          // Center - Main Content
+          // Builds the main search and filter section
           center = new VBox {
             spacing = 10
             padding = Insets(20)
@@ -109,7 +110,7 @@ object NutritionLookupApp extends JFXApp3 {
 
               new Separator(),
 
-              // Search Controls
+              // Search input and action buttons row
               new HBox {
                 spacing = 10
                 alignment = Pos.CenterLeft
@@ -133,6 +134,7 @@ object NutritionLookupApp extends JFXApp3 {
                 )
               },
 
+              // Filter foods by category or healthiness
               new HBox {
                 spacing = 10
                 alignment = Pos.CenterLeft
@@ -155,7 +157,7 @@ object NutritionLookupApp extends JFXApp3 {
 
               new Separator(),
 
-              // Results Table
+              // Displays the search results in a table
               new Label("Search Results:") {
                 style = "-fx-font-size: 16px; -fx-font-weight: bold;"
               },
@@ -200,10 +202,10 @@ object NutritionLookupApp extends JFXApp3 {
                   }
                 )
 
-                // Initialize with all foods
+                // Populates table with all foods initially
                 items = ObservableBuffer(database.getAllFoods.map(new FoodDisplay(_)): _*)
 
-                // Row selection handler
+                // Shows details when row is double-clicked
                 onMouseClicked = _ => {
                   val selectedItem = selectionModel().getSelectedItem
                   if (selectedItem != null) {
@@ -214,7 +216,7 @@ object NutritionLookupApp extends JFXApp3 {
             )
           }
 
-          // Bottom Status Bar
+          // Displays total foods and average calories
           bottom = new HBox {
             padding = Insets(10)
             spacing = 20
@@ -229,12 +231,12 @@ object NutritionLookupApp extends JFXApp3 {
           }
         }
 
-        // Utility accessors with .value
         def getSearchField = root.value.lookup("#searchField").asInstanceOf[javafx.scene.control.TextField]
         def getCategoryCombo = root.value.lookup("#categoryCombo").asInstanceOf[javafx.scene.control.ComboBox[String]]
         def getResultsTable = root.value.lookup("#resultsTable").asInstanceOf[javafx.scene.control.TableView[FoodDisplay]]
         def getStatusLabel = root.value.lookup("#statusLabel").asInstanceOf[javafx.scene.control.Label]
 
+        // Updates the table contents with given food list
         def updateResults(foods: List[Food]): Unit = {
           val table = getResultsTable
           table.setItems(
@@ -245,12 +247,13 @@ object NutritionLookupApp extends JFXApp3 {
           updateStatus(foods.size)
         }
 
-
+        // Updates status bar with current statistics
         def updateStatus(showing: Int = -1): Unit = {
           val showingCount = if (showing >= 0) showing else database.getFoodCount
           getStatusLabel.setText(s"Showing: $showingCount foods | Total: ${database.getFoodCount} | Avg Calories: ${database.getAverageCalories.formatted("%.1f")}")
         }
 
+        // Shows a detailed popup for selected food
         def showDetailedInfo(food: Food): Unit = {
           new Alert(Alert.AlertType.Information) {
             title = "Detailed Nutrition Information"
@@ -264,7 +267,7 @@ object NutritionLookupApp extends JFXApp3 {
           }.showAndWait()
         }
 
-        // Event Handlers
+        // Handles search button click and performs search
         root.value.lookup("#searchButton").onMouseClicked = _ => {
           val searchText = getSearchField.getText
 
@@ -293,24 +296,28 @@ object NutritionLookupApp extends JFXApp3 {
           }
         }
 
+        // Clears search input and shows all foods
         root.value.lookup("#clearButton").onMouseClicked = _ => {
           getSearchField.setText("")
           getCategoryCombo.setValue("All")
           updateResults(database.getAllFoods)
         }
 
+        // Filters the table based on selected category
         getCategoryCombo.onAction = _ => {
           val category = getCategoryCombo.getValue
           val results = database.searchByCategory(category)
           updateResults(results)
         }
 
+        // Filters the table to show only healthy foods
         root.value.lookup("#healthyButton").onMouseClicked = _ => {
           val results = database.getHealthyFoods
           updateResults(results)
         }
 
-        getSearchField.onKeyPressed = handle { (event: javafx.scene.input.KeyEvent) => // ✅ fixed parentheses
+        // Executes search when Enter key is pressed
+        getSearchField.onKeyPressed = handle { (event: javafx.scene.input.KeyEvent) =>
           if (event.getCode.toString == "ENTER") {
             root.value.lookup("#searchButton").fireEvent(new javafx.scene.input.MouseEvent(
               javafx.scene.input.MouseEvent.MOUSE_CLICKED,
@@ -327,6 +334,7 @@ object NutritionLookupApp extends JFXApp3 {
     }
   }
 
+  // Converts Scala Seq to Java List for table population
   import java.util.{List => JList}
   implicit def seqToJavaList[T](seq: Seq[T]): JList[T] = {
     val javaList = new java.util.ArrayList[T]()
